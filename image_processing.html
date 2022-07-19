@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <link rel="stylesheet" href="./image_processing.css" />
     <title>영상정보처리 - JavaScript</title>
     <script lang="javascript">
       var inFile, inCanvas, inCtx, inPaper;
@@ -99,8 +100,10 @@
 
             case 401: embosImage(); break;
             case 402: blurImage(); break;
-            case 403: sharpImage(); break;
-            case 404: edgeImage(); break;
+            case 403: gaussianImage(); break;
+            case 404: sharpImage(); break;
+            case 405: edgeImage(); break;
+            case 406: laplacianImage(); break;
 
             default: equalImage();
         }
@@ -576,6 +579,18 @@
                 tmpOutput[i][k] = S;
             }
         }
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                if(tmpOutput[i][k] > 255) {
+                    tmpOutput[i][k] = 255
+                }
+                else if(tmpOutput[i][k] < 0) {
+                    tmpOutput[i][k] = 0;
+                }
+            }
+        }
+
         return tmpOutput;
       }
 
@@ -609,6 +624,24 @@
         var tmpOutput = doMaskProcess(mask);
 
         // 후처리 : 마스크 합계가 0이라면 127 정도를 더하기
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[i][k] = parseInt(tmpOutput[i][k]);
+            }
+        }
+        displayOutImage();
+      }
+
+      function gaussianImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        var mask = [[1/16, 1/8, 1/16],
+                    [1/8, 1/4, 1/8],
+                    [1/16, 1/8, 1/16]];
+
+        var tmpOutput = doMaskProcess(mask);
+
         for (var i=0; i<inH; i++) {
             for (var k=0; k<inW; k++) {
                 outImage[i][k] = parseInt(tmpOutput[i][k]);
@@ -652,17 +685,48 @@
         }
         displayOutImage();
       }
+
+      function laplacianImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        var mask = [[-1, -1., -1.],
+                    [-1., 8., -1.],
+                    [-1., -1., -1.]];
+
+        var tmpOutput = doMaskProcess(mask);
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[i][k] = parseInt(tmpOutput[i][k]);
+            }
+        }
+        displayOutImage();
+      }
     </script>
   </head>
 
   <body onload="init()">
-    <h1>영상 처리 프로그램</h1>
-    <hr />
+    <div id="header">
+      <h1 id="title">영상 처리 프로그램</h1>
+      <hr />
+    </div>
     <br />
-    <form>
-      <input type="file" id="inFile" onchange="openImage()" /> <br /><br />
+    <form id="form">
+      <label id="input-file-button" for="inFile">업로드</label>
+      <input
+        type="file"
+        id="inFile"
+        onchange="openImage()"
+        style="display: none"
+      />
+      <br /><br />
 
-      <select name="pixel" onchange="selectAlgo(this.form.pixel)">
+      <select
+        name="pixel"
+        class="select"
+        onchange="selectAlgo(this.form.pixel)"
+      >
         <option value="100">- 화소점 처리</option>
         <option value="101">동일 영상</option>
         <option value="102">밝게</option>
@@ -677,7 +741,11 @@
         <option value="111">파라볼라 (CUP)</option>
       </select>
 
-      <select name="geometry" onchange="selectAlgo(this.form.geometry)">
+      <select
+        name="geometry"
+        class="select"
+        onchange="selectAlgo(this.form.geometry)"
+      >
         <option value="200">- 기하학 처리</option>
         <option value="201">좌우 미러링</option>
         <option value="202">상하 미러링</option>
@@ -688,29 +756,41 @@
         <option value="207">회전</option>
       </select>
 
-      <select name="histo" onchange="selectAlgo(this.form.histo)">
+      <select
+        name="histo"
+        class="select"
+        onchange="selectAlgo(this.form.histo)"
+      >
         <option value="300">- 히스토그램 처리</option>
         <option value="301">히스토그램 스트레칭</option>
         <option value="302">엔드-인</option>
         <option value="303">평활화</option>
       </select>
 
-      <select name="range" onchange="selectAlgo(this.form.range)">
+      <select
+        name="range"
+        class="select"
+        onchange="selectAlgo(this.form.range)"
+      >
         <option value="400">- 화소영역 처리</option>
         <option value="401">엠보싱</option>
         <option value="402">블러링</option>
-        <option value="403">샤프닝</option>
-        <option value="404">경계선 검출</option>
+        <option value="403">가우시안 스무딩</option>
+        <option value="404">샤프닝</option>
+        <option value="405">경계선 검출</option>
+        <option value="406">라플라시안</option>
       </select>
     </form>
     <br />
-    <canvas
-      id="inCanvas"
-      style="background-color: white; border: 2px solid black"
-    ></canvas>
-    <canvas
-      id="outCanvas"
-      style="background-color: white; border: 2px solid black"
-    ></canvas>
+    <div id="canvas-container">
+      <canvas
+        id="inCanvas"
+        style="background-color: white; border: 2px solid black"
+      ></canvas>
+      <canvas
+        id="outCanvas"
+        style="background-color: white; border: 2px solid black"
+      ></canvas>
+    </div>
   </body>
 </html>
