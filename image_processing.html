@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>영상정보처리 - JavaScript</title>
+    <script lang="javascript">
+      var inFile, inCanvas, inCtx, inPaper;
+      var inImage, inH, inW;
+      var outCanvas, outCtx, outPaper;
+      var outImage, outH, outW;
+
+      function init(){
+          inCanvas = document.getElementById("inCanvas");
+          inCtx = inCanvas.getContext("2d");
+          outCanvas = document.getElementById("outCanvas");
+          outCtx = outCanvas.getContext("2d");
+      }
+
+      function openImage(){
+          inFile = document.getElementById("inFile").files[0];
+          inH = inW = Math.floor(Math.sqrt(inFile.size));
+
+          inImage = new Array(inH);
+          for(var i=0; i<inH; i++){
+              inImage[i] = new Array(inW);
+          }
+
+          inCanvas.height = inH;
+          inCanvas.width = inW;
+
+          //파일 -> 메모리로 로딩
+          var reader = new FileReader();
+          reader.readAsBinaryString(inFile);
+          reader.onload = function() {
+              var blob = reader.result;
+              for(var i=0; i<inH; i++) {
+                  for(var k=0; k<inW; k++) {
+                      var sPixel = (i * inH) + k;
+                      var ePixel = (i * inH) + k + 1;
+                      inImage[i][k] = blob.slice(sPixel, ePixel).charCodeAt(0);
+                  }
+              }
+              displayInImage();
+          }
+      }
+
+      function displayInImage() {
+          inPaper = inCtx.createImageData(inH, inW);
+          for(var i=0; i<inH; i++) {
+              for(var k=0; k<inW; k++) {
+                  var px = inImage[i][k];
+                  inPaper.data[(i*inH + k)*4 + 0] = px; // Red
+                  inPaper.data[(i*inH + k)*4 + 1] = px; // Green
+                  inPaper.data[(i*inH + k)*4 + 2] = px; // Blue
+                  inPaper.data[(i*inH + k)*4 + 3] = 255; // Alpha
+              }
+          }
+          inCtx.putImageData(inPaper, 0, 0);
+      }
+
+      function displayOutImage() {
+          outPaper = outCtx.createImageData(outH, outW);
+          for(var i=0; i<outH; i++) {
+              for(var k=0; k<outW; k++) {
+                  var px = outImage[i][k];
+                  outPaper.data[(i*outH + k)*4 + 0] = px; // Red
+                  outPaper.data[(i*outH + k)*4 + 1] = px; // Green
+                  outPaper.data[(i*outH + k)*4 + 2] = px; // Blue
+                  outPaper.data[(i*outH + k)*4 + 3] = 255; // Alpha
+              }
+          }
+          outCtx.putImageData(outPaper, 0, 0);
+      }
+
+      function selectAlgo(selNum) {
+        switch (parseInt(selNum.value)) {
+            case 101: equalImage(); break;
+            case 102: addImage(); break;
+            case 103: subImage(); break;
+            case 104: reverseImage(); break;
+            case 105: grayScale128Image(); break;
+            case 106: grayScaleAvgImage(); break;
+            case 107: grayScaleMidImage(); break;
+            case 108: gammaImage(); break;
+            case 109: rangeImage(); break;
+            case 110: parabolaCapImage(); break;
+            case 111: parabolaCupImage(); break;
+
+            case 201: mirroringLRImage(); break;
+            case 202: mirroringUDImag(); break;
+            case 203: zoomOutImage(); break;
+            case 204: zoomInForwardImage(); break;
+            case 205: zoomInBackWardImage(); break;
+            case 206: moveImage(); break;
+            case 207: rotateImage(); break;
+
+            case 301: histoStretchImage(); break;
+            case 302: endInImage(); break;
+            case 303: histoEqualImage(); break;
+
+            case 401: embosImage(); break;
+            case 402: blurImage(); break;
+            case 403: sharpImage(); break;
+            case 404: edgeImage(); break;
+
+            default: equalImage();
+        }
+      }
+
+      function makeOutImageArr(){
+        outH = inH;
+        outW = inW;
+
+        outImage = new Array(outH);
+        for(var i=0; i<outH; i++) {
+            outImage[i] = new Array(outW);
+        }
+      }
+
+      function makeOutCanvas(){
+        outCanvas.height = outH;
+        outCanvas.width = outW;
+      }
+
+      // 화소점 처리
+      function equalImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[i][k] = inImage[i][k];
+            }
+        }
+        displayOutImage();
+      }
+
+      function addImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        var addValue = parseInt(prompt("올릴 밝기를 입력하세요 ex) 50 ", 50));
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                if (inImage[i][k] + addValue > 255)
+                    outImage[i][k] = 255;
+                else
+                    outImage[i][k] = inImage[i][k] + addValue;
+            }
+        }
+        displayOutImage();
+      }
+
+      function subImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        var subValue = parseInt(prompt("어둡게 할 값을 입력하세요 ex) 50 ", 50));
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                if (inImage[i][k] - subValue < 0)
+                    outImage[i][k] = 0;
+                else
+                    outImage[i][k] = inImage[i][k] - subValue;
+            }
+        }
+        displayOutImage();
+      }
+
+      function reverseImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[i][k] = 255 - inImage[i][k];
+            }
+        }
+        displayOutImage();
+      }
+
+      function grayScale128Image() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                if(inImage[i][k] > 128)
+                    outImage[i][k] = 255;
+                else
+                    outImage[i][k] = 0;
+            }
+        }
+        displayOutImage();
+      }
+
+      function grayScaleAvgImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        var sum = avg =  0;
+        for(var i=0; i<inH; i++) {
+            for(var k=0; k<inW; k++){
+                sum += inImage[i][k];
+            }
+        }
+        avg = sum / (inH*inW);
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                if(inImage[i][k] > avg)
+                    outImage[i][k] = 255;
+                else
+                    outImage[i][k] = 0;
+            }
+        }
+        displayOutImage();
+      }
+
+      function grayScaleMidImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        var idx = mid =  0;
+        var tmpArr = new Array(inH*inW);
+        for(var i=0; i<inH; i++) {
+            for(var k=0; k<inW; k++){
+                tmpArr[idx++] = inImage[i][k];
+            }
+        }
+        tmpArr.sort();
+        mid = tmpArr[parseInt((inH*inW)/2)];
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                if(inImage[i][k] > mid)
+                    outImage[i][k] = 255;
+                else
+                    outImage[i][k] = 0;
+            }
+        }
+        displayOutImage();
+      }
+
+      function gammaImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        var gammaValue = prompt("감마값을 입력하세요 ex) 0.8 ", 0.8);
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[i][k] = parseInt(Math.pow(inImage[i][k], 1/gammaValue));
+            }
+        }
+        displayOutImage();
+      }
+
+      function rangeImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        var [left_range, right_range] = prompt("강조할 범위를 입력하세요 (ex) 100 150) : ").split(" ");
+        var low, high;
+
+        if(parseInt(left_range) >= parseInt(right_range)){
+            low = parseInt(right_range);
+            high = parseInt(left_range);
+        }
+        else {
+            low = parseInt(left_range);
+            high = parseInt(right_range);
+        }
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                if(low <= inImage[i][k] && inImage[i][k] <= high){
+                    outImage[i][k] = 255;
+                }
+                else{
+                    outImage[i][k] = inImage[i][k];
+                }
+            }
+        }
+        displayOutImage();
+      }
+
+      function parabolaCapImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[i][k] = 255 * Math.pow((inImage[i][k] / 127)-1, 2) ;
+            }
+        }
+        displayOutImage();
+      }
+
+      function parabolaCupImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[i][k] = -255 * Math.pow((inImage[i][k] / 127)-1, 2) + 255;
+            }
+        }
+        displayOutImage();
+      }
+
+      // 기하학 처리
+      function mirroringLRImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[i][inW-1-k] = inImage[i][k];
+            }
+        }
+        displayOutImage();
+      }
+
+      function mirroringUDImag() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[inH-1-i][k] = inImage[i][k];
+            }
+        }
+        displayOutImage();
+      }
+
+      function zoomOutImage() {
+        var scale = parseInt(prompt("축소할 배율을 입력하세요 ex) 2 ", 2));
+
+        outH = parseInt(inH/scale);
+        outW = parseInt(inW/scale);
+
+        outImage = new Array(outH);
+        for(var i=0; i<outH; i++) {
+            outImage[i] = new Array(outW);
+        }
+        makeOutCanvas();
+
+        for (var i=0; i<outH; i++) {
+            for (var k=0; k<outW; k++) {
+                outImage[i][k] = inImage[i*scale][k*scale];
+            }
+        }
+        displayOutImage();
+      }
+
+      function zoomInForwardImage() {
+        var scale = parseInt(prompt("확대할 배율을 입력하세요 ex) 2 ", 2));
+
+        outH = parseInt(inH*scale);
+        outW = parseInt(inW*scale);
+
+        outImage = new Array(outH);
+        for(var i=0; i<outH; i++) {
+            outImage[i] = new Array(outW);
+        }
+        makeOutCanvas();
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[i*scale][k*scale] = inImage[i][k];
+            }
+        }
+        displayOutImage();
+      }
+
+      function zoomInBackWardImage() {
+        var scale = parseInt(prompt("확대할 배율을 입력하세요 ex) 2 ", 2));
+
+        outH = parseInt(inH*scale);
+        outW = parseInt(inW*scale);
+
+        outImage = new Array(outH);
+        for(var i=0; i<outH; i++) {
+            outImage[i] = new Array(outW);
+        }
+        makeOutCanvas();
+
+        for (var i=0; i<outH; i++) {
+            for (var k=0; k<outW; k++) {
+                outImage[i][k] = inImage[parseInt(i/scale)][parseInt(k/scale)];
+            }
+        }
+        displayOutImage();
+      }
+
+      function moveImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        var [moveX, moveY] = prompt("이동할 x, y 위치를 입력하세요 (ex) 100 150) : ").split(" ");
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                if((i-parseInt(moveY)) >= 0 && (k+parseInt(moveX)) >= 0)
+                    outImage[i-parseInt(moveY)][k+parseInt(moveX)] = inImage[i][k];
+            }
+        }
+        displayOutImage();
+      }
+
+      function rotateImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        var scale = parseInt(prompt("회전시킬 각도를 입력하세요", 90));
+        var radian = scale * (Math.PI / 180);
+
+        var centerX = parseInt(inH/2);
+        var centerY = parseInt(inW/2);
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                var rotateX = parseInt((i- centerX) * Math.cos(radian) - (k - centerY) * Math.sin(radian) + centerX);
+                var rotateY = parseInt((i- centerX) * Math.sin(radian) + (k - centerY) * Math.cos(radian) + centerY);
+
+                if(inImage[rotateX]){
+                    if(0 <= rotateX  && 0 <= rotateY) {
+                        outImage[i][k] = inImage[rotateX][rotateY];
+                    }
+                }
+            }
+        }
+        displayOutImage();
+      }
+
+      // 히스토그램 처리
+      function histoStretchImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        //outImage = (inImage - MIN) * HIGH(255) / (MAX - MIN);
+        var min = max = inImage[0][0];
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                if(inImage[i][k] < min) {
+                    min = inImage[i][k];
+                }
+                if(inImage[i][k] > max) {
+                    max = inImage[i][k];
+                }
+            }
+        }
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[i][k] = (inImage[i][k] - min) * 255 / (max - min);
+            }
+        }
+        displayOutImage();
+      }
+
+      function endInImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        var min = max = inImage[0][0];
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                if(inImage[i][k] < min) {
+                    min = inImage[i][k];
+                }
+                if(inImage[i][k] > max) {
+                    max = inImage[i][k];
+                }
+            }
+        }
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                if(inImage[i][k] <= min)
+                    outImage[i][k] = 0;
+                else if(inImage[i][k] >= max)
+                    outImage[i][k] = 255;
+                else
+                    outImage[i][k] = (inImage[i][k] - min) * 255 / (max - min);
+            }
+        }
+        displayOutImage();
+      }
+
+      function histoEqualImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        //1. 히스토그램, 누적히스토그램 생성 & 초기화
+        var histo = new Array(256); //pixel 값
+        var sumHisto = new Array(256);
+        for (var i=0; i<256; i++) {
+            histo[i] = 0;
+            sumHisto[i] = 0;
+        }
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                histo[inImage[i][k]]++;
+            }
+        }
+
+        //2. 누적 히스토그램 계산
+        var sumValue = 0;
+        for (var i=0; i<256; i++) {
+            sumValue +=  histo[i];
+            sumHisto[i] = sumValue;
+        }
+
+        //3. 정규화된 누적합 생성
+        // n[i] = sum[i] * 1/N * max(255)
+        var normalHisto = new Array(256);
+        for (var i=0; i<256; i++) {
+            normalHisto[i] =  sumHisto[i] * (1.0 / (inH*inW)) * 255.0;
+        }
+
+        //4단계 : 정규화된 히스토그램을 적용시켜서 픽셀값을 변환
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[i][k] = normalHisto[inImage[i][k]];
+            }
+        }
+        displayOutImage();
+      }
+
+      // 화소영역 처리
+      function makeBorderArr(){
+        // 임시 입력 배열 - for 테두리 처리
+        var tmpInput = new Array(inH+2);
+        for (var i=0; i<inH+2; i++){
+            tmpInput[i] = new Array(inW+2);
+        }
+
+        // 임시 입력 배열 초기화 (127로)
+        for (var i=0; i<inH+2; i++) {
+            for (var k=0; k<inW+2; k++) {
+                tmpInput[i][k] = 127.0;
+            }
+        }
+
+        // 원 입력 영상 --> 임시 입력에 덮어씌우기
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                tmpInput[i+1][k+1] = parseFloat(inImage[i][k]);
+            }
+        }
+
+        // 임시 출력 배열
+        var tmpOutput = new Array(outH);
+        for (var i=0; i<outH; i++){
+            tmpOutput[i] = new Array(outW);
+        }
+        return { tmpInput: tmpInput, tmpOutput: tmpOutput };
+      }
+
+      function doMaskProcess(mask){
+        var tmpArr = makeBorderArr();
+        var tmpInput = tmpArr.tmpInput;
+        var tmpOutput = tmpArr.tmpOutput;
+
+        // 회선 연산
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                var S = 0.0;
+                for (var m=0; m<3; m++){
+                    for (var n=0; n<3; n++){
+                        S += tmpInput[i+m][k+n] * mask[m][n];
+                    }
+                }
+                tmpOutput[i][k] = S;
+            }
+        }
+        return tmpOutput;
+      }
+
+      function embosImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        var mask = [[-1.0, 0.0, 0.0],
+                    [0.0, 0.0, 0.0],
+                    [0.0, 0.0, 1.0]];
+
+        var tmpOutput = doMaskProcess(mask);
+
+        // 후처리 : 마스크 합계가 0이라면 127 정도를 더하기
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[i][k] = parseInt(tmpOutput[i][k] + 127.0);
+            }
+        }
+        displayOutImage();
+      }
+
+      function blurImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        var mask = [[1/9.0, 1/9.0, 1/9.0],
+                    [1/9.0, 1/9.0, 1/9.0],
+                    [1/9.0, 1/9.0, 1/9.0]];
+
+        var tmpOutput = doMaskProcess(mask);
+
+        // 후처리 : 마스크 합계가 0이라면 127 정도를 더하기
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[i][k] = parseInt(tmpOutput[i][k]);
+            }
+        }
+        displayOutImage();
+      }
+
+      function sharpImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        var mask = [[0, -1, 0],
+                    [-1, 5, -1],
+                    [0, -1, 0]];
+
+        var tmpOutput = doMaskProcess(mask);
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[i][k] = parseInt(tmpOutput[i][k]);
+            }
+        }
+        displayOutImage();
+      }
+
+      function edgeImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        var mask = [[0.0, -1.0, 0.0],
+                    [-1.0, 2.0, 0.0],
+                    [0.0, 0.0, 0.0]];
+
+        var tmpOutput = doMaskProcess(mask);
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[i][k] = parseInt(tmpOutput[i][k]);
+            }
+        }
+        displayOutImage();
+      }
+    </script>
+  </head>
+
+  <body onload="init()">
+    <h1>영상 처리 프로그램</h1>
+    <hr />
+    <br />
+    <form>
+      <input type="file" id="inFile" onchange="openImage()" /> <br /><br />
+
+      <select name="pixel" onchange="selectAlgo(this.form.pixel)">
+        <option value="100">- 화소점 처리</option>
+        <option value="101">동일 영상</option>
+        <option value="102">밝게</option>
+        <option value="103">어둡게</option>
+        <option value="104">반전</option>
+        <option value="105">흑백(128기준)</option>
+        <option value="106">흑백(평균값기준)</option>
+        <option value="107">흑백(중앙값기준)</option>
+        <option value="108">감마 보정</option>
+        <option value="109">범위 강조</option>
+        <option value="110">파라볼라 (CAP)</option>
+        <option value="111">파라볼라 (CUP)</option>
+      </select>
+
+      <select name="geometry" onchange="selectAlgo(this.form.geometry)">
+        <option value="200">- 기하학 처리</option>
+        <option value="201">좌우 미러링</option>
+        <option value="202">상하 미러링</option>
+        <option value="203">축소</option>
+        <option value="204">확대 (Forwarding)</option>
+        <option value="205">확대 (Backwarding)</option>
+        <option value="206">이동</option>
+        <option value="207">회전</option>
+      </select>
+
+      <select name="histo" onchange="selectAlgo(this.form.histo)">
+        <option value="300">- 히스토그램 처리</option>
+        <option value="301">히스토그램 스트레칭</option>
+        <option value="302">엔드-인</option>
+        <option value="303">평활화</option>
+      </select>
+
+      <select name="range" onchange="selectAlgo(this.form.range)">
+        <option value="400">- 화소영역 처리</option>
+        <option value="401">엠보싱</option>
+        <option value="402">블러링</option>
+        <option value="403">샤프닝</option>
+        <option value="404">경계선 검출</option>
+      </select>
+    </form>
+    <br />
+    <canvas
+      id="inCanvas"
+      style="background-color: white; border: 2px solid black"
+    ></canvas>
+    <canvas
+      id="outCanvas"
+      style="background-color: white; border: 2px solid black"
+    ></canvas>
+  </body>
+</html>
