@@ -85,6 +85,7 @@
             case 109: rangeImage(); break;
             case 110: parabolaCapImage(); break;
             case 111: parabolaCupImage(); break;
+            case 112: posterizingImage(); break;
 
             case 201: mirroringLRImage(); break;
             case 202: mirroringUDImag(); break;
@@ -104,6 +105,7 @@
             case 404: sharpImage(); break;
             case 405: edgeImage(); break;
             case 406: laplacianImage(); break;
+            case 407: highPassFilterImage(); break;
 
             default: equalImage();
         }
@@ -703,6 +705,50 @@
         }
         displayOutImage();
       }
+
+      function highPassFilterImage() {
+        makeOutImageArr();
+        makeOutCanvas();
+
+        var mask = [[-1./9., -1./9., -1./9.],
+                    [-1./9., 8./9., -1./9.],
+                    [-1./9., -1./9., -1./9.]];
+
+        var tmpArr = makeBorderArr();
+        var tmpInput = tmpArr.tmpInput;
+        var tmpOutput = tmpArr.tmpOutput;
+
+        // 회선 연산
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                var S = 0.0;
+                for (var m=0; m<3; m++){
+                    for (var n=0; n<3; n++){
+                        S += 100 * tmpInput[i+m][k+n] * mask[m][n];
+                    }
+                }
+                tmpOutput[i][k] = S;
+            }
+        }
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                if(tmpOutput[i][k] > 255) {
+                    tmpOutput[i][k] = 255
+                }
+                else if(tmpOutput[i][k] < 0) {
+                    tmpOutput[i][k] = 0;
+                }
+            }
+        }
+
+        for (var i=0; i<inH; i++) {
+            for (var k=0; k<inW; k++) {
+                outImage[i][k] = parseInt(tmpOutput[i][k]);
+            }
+        }
+        displayOutImage();
+      }
     </script>
   </head>
 
@@ -739,6 +785,7 @@
         <option value="109">범위 강조</option>
         <option value="110">파라볼라 (CAP)</option>
         <option value="111">파라볼라 (CUP)</option>
+        <option value="112">포스터라이징</option>
       </select>
 
       <select
@@ -779,6 +826,7 @@
         <option value="404">샤프닝</option>
         <option value="405">경계선 검출</option>
         <option value="406">라플라시안</option>
+        <option value="407">고주파 샤프닝</option>
       </select>
     </form>
     <br />
